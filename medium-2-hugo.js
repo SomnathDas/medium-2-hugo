@@ -32,6 +32,40 @@ const turndownService = new TurndownService({
     codeBlockStyle: 'fenced'
 });
 
+turndownService.addRule('mediumCodeBlocks', {
+    filter: 'pre',
+    replacement: function (content, node) {
+        function extractCode(n) {
+            let text = '';
+            for (let i = 0; i < n.childNodes.length; i++) {
+                const child = n.childNodes[i];
+                if (child.nodeName === 'BR') {
+                    text += '\n';
+                } else if (child.nodeName === 'DIV' || child.nodeName === 'P') {
+                    text += '\n' + extractCode(child) + '\n';
+                } else if (child.nodeType === 3) { 
+                    text += child.nodeValue;
+                } else {
+                    text += extractCode(child);
+                }
+            }
+            return text;
+        }
+
+        const rawCode = extractCode(node).trim();
+        return '\n```\n' + rawCode + '\n```\n\n';
+    }
+});
+
+turndownService.addRule('mediumInlineCode', {
+    filter: function (node) {
+        return node.nodeName === 'CODE' && node.parentNode.nodeName !== 'PRE';
+    },
+    replacement: function (content, node) {
+        return '`' + node.textContent + '`';
+    }
+});
+
 const asciiArt = `
 ┌┬┐┌─┐┌┬┐┬┬ ┬┌┬┐   ╦╦   ┬ ┬┬ ┬┌─┐┌─┐
 │││├┤  ││││ ││││───║║───├─┤│ ││ ┬│ │
